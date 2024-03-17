@@ -24,9 +24,22 @@ use crate::{
 const BYTE_WIDTH: usize = u8::BITS as usize;
 
 /// The minimal alignment required for [`Chunk`]s, in bits.
-pub const SLAB_SHIFT: u32 = 2 + 10 + 10;
+// pub const SLAB_SHIFT: u32 = 2 + 10 + 10;
+pub const SLAB_SHIFT: u32 = 10 + 10;
 /// The minimal alignment required for [`Chunk`]s.
 pub const SLAB_SIZE: usize = 1 << SLAB_SHIFT;
+
+// const MAX_ARENAS: usize = 112;
+const MAX_ARENAS: usize = 8;
+
+// const MIN_RESERVE_COUNT: usize = 32;
+const MIN_RESERVE_COUNT: usize = 2;
+
+// pub(crate) const SHARD_SHIFT: u32 = 6 + 10;
+pub(crate) const SHARD_SHIFT: u32 = 5 + 10;
+pub(crate) const SHARD_SIZE: usize = 1 << SHARD_SHIFT;
+
+pub(crate) const SHARD_COUNT: usize = SLAB_SIZE / SHARD_SIZE;
 
 pub(crate) const fn slab_layout(n: usize) -> Layout {
     match Layout::from_size_align(n << SLAB_SHIFT, SLAB_SIZE) {
@@ -34,11 +47,6 @@ pub(crate) const fn slab_layout(n: usize) -> Layout {
         Err(_) => panic!("invalid slab layout"),
     }
 }
-
-pub(crate) const SHARD_SHIFT: u32 = 6 + 10;
-pub(crate) const SHARD_SIZE: usize = 1 << SHARD_SHIFT;
-
-pub(crate) const SHARD_COUNT: usize = SLAB_SIZE / SHARD_SIZE;
 
 struct Arena<B: BaseAlloc> {
     arena_id: NonZeroUsize,
@@ -224,7 +232,6 @@ impl<B: BaseAlloc> Arena<B> {
     }
 }
 
-const MAX_ARENAS: usize = 112;
 /// A collection of arenas.
 ///
 /// This structure manages all the memory within its lifetime. Multiple
@@ -491,7 +498,6 @@ impl<B: BaseAlloc> Arenas<B> {
             {
                 return slab;
             }
-            const MIN_RESERVE_COUNT: usize = 32;
 
             let reserve_count = count.max(MIN_RESERVE_COUNT);
             let arena = Arena::new(&self.base, reserve_count, None, false)?;
